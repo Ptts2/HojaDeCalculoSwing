@@ -80,7 +80,9 @@ public class HojaDeCalculoSwing {
 
         // Añado la hoja al ScollPane y los elementos al panel principal con
         // BorderLayout
-        JScrollPane panelHoja = new JScrollPane(hoja);
+
+
+        JScrollPane panelHoja = new JScrollPane(hoja); //hoja
         JTextPane panelTexto = new JTextPane();
 
         // Panel donde se representaran las filas y las columnas seleccionadas
@@ -97,8 +99,6 @@ public class HojaDeCalculoSwing {
             }
             
         });
-        
-
         
         panelTextos.add(panelTextoFilaCol, BorderLayout.WEST);
         panelTextos.add(panelTexto, BorderLayout.CENTER);
