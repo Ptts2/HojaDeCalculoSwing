@@ -1,6 +1,17 @@
 import java.util.*;
 import java.awt.*;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableModel;
 import java.io.*;
 
 public class HojaDeCalculoSwing{
@@ -36,10 +47,34 @@ public class HojaDeCalculoSwing{
         barra.add(editar);
 
         /*Tabla que hará de hoja de calculo */
-        JTable hoja = new JTable(50,50); //(cambiar 50,50 por variable, posible metodo)
+        JTable hoja = new JTable(); //(cambiar 50,50 por variable, posible metodo)
         hoja.setAutoResizeMode( JTable.AUTO_RESIZE_OFF );
         JTable filas = numerosFila(50); //Numeros de las filas
+        DefaultTableModel modelo = new DefaultTableModel(50,50);
+        modelo.addTableModelListener(new TableModelListener(){
+            
+            public void tableChanged(TableModelEvent e){
+                int fila=-1, columna=-1;
+                Object value = "";
+                if(hoja.isEditing()){
+                    fila = hoja.getSelectedRow();
+                    columna = hoja.getSelectedColumn();
+                    value = hoja.getValueAt(fila,columna);
+                }
 
+                if(fila !=-1 && columna != -1 && !String.valueOf(value).isEmpty() ){
+
+                    if(String.valueOf(value).charAt(0) == '=')
+                    hoja.setValueAt(""/*Resolver formula*/, fila, columna);
+
+                }
+                
+            }
+ 
+        });
+        
+        hoja.setModel(modelo);
+        
 
         //Añado la hoja al ScollPane y los elementos al panel principal con BorderLayout
         JScrollPane panelHoja = new JScrollPane(hoja);
@@ -47,12 +82,15 @@ public class HojaDeCalculoSwing{
         panel.add(panelHoja, BorderLayout.CENTER);
         panel.add(filas,BorderLayout.WEST);
 
+
         //Añadir al frame
         ventana.add(panel);
         ventana.pack(); //Mejor tamaño posible
         ventana.setVisible(true);
+
         
     }
+
 
     public static JTable numerosFila(int nFilas){
 
@@ -80,4 +118,6 @@ public class HojaDeCalculoSwing{
 
         return filas;
     }
+
+
 }
