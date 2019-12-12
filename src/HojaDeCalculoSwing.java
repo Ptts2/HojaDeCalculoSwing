@@ -7,6 +7,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextPane;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
@@ -22,6 +25,8 @@ public class HojaDeCalculoSwing {
         JFrame ventana = new JFrame("Hoja de calculo");
         ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         JPanel panel = new JPanel(new BorderLayout());
+        JPanel panelBarraYTexto = new JPanel(new BorderLayout()); // Panel para poner la barra y la celda de texto
+        JPanel panelTextos = new JPanel(new BorderLayout()); // Panel para guardar los textos que ira en el otro panel
 
         /* Barra y menus */
         JMenuBar barra = new JMenuBar(); // La barra
@@ -61,7 +66,7 @@ public class HojaDeCalculoSwing {
 
                 if (fila != -1 && columna != -1 && !String.valueOf(value).isEmpty()) {
 
-                    if (String.valueOf(value).charAt(0) == '='){
+                    if (String.valueOf(value).charAt(0) == '=') {
                         Formula formula = new Formula(String.valueOf(value), fila, columna, hoja);
                         hoja.setValueAt(resolverFormula(formula), fila, columna);
                     }
@@ -76,7 +81,32 @@ public class HojaDeCalculoSwing {
         // Añado la hoja al ScollPane y los elementos al panel principal con
         // BorderLayout
         JScrollPane panelHoja = new JScrollPane(hoja);
-        panel.add(barra, BorderLayout.NORTH);
+        JTextPane panelTexto = new JTextPane();
+
+        // Panel donde se representaran las filas y las columnas seleccionadas
+        JTextPane panelTextoFilaCol = new JTextPane();
+        panelTextoFilaCol.setOpaque(true);
+        panelTextoFilaCol.setBackground(new Color(238, 238, 238));
+        panelTextoFilaCol.setEditable(false);
+        panelTextoFilaCol.setText("Fila: N/A Columna: N/A");
+
+        hoja.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                panelTextoFilaCol.setText("Fila: " + (hoja.getSelectedRow()+1) + " Columna: " + (hoja.getSelectedColumn() +1 ));
+            }
+            
+        });
+        
+
+        
+        panelTextos.add(panelTextoFilaCol, BorderLayout.WEST);
+        panelTextos.add(panelTexto, BorderLayout.CENTER);
+
+        panelBarraYTexto.add(barra, BorderLayout.NORTH);
+        panelBarraYTexto.add(panelTextos, BorderLayout.SOUTH);
+
+        panel.add(panelBarraYTexto, BorderLayout.NORTH);
         panel.add(panelHoja, BorderLayout.CENTER);
         panel.add(filas, BorderLayout.WEST);
 
