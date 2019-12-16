@@ -1,5 +1,10 @@
 import java.util.*;
+import java.util.ResourceBundle.Control;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -11,12 +16,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.KeyStroke;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
-import java.io.*;
+import java.awt.event.KeyEvent;
+
 
 public class HojaDeCalculoSwing {
     public static void main(String[] args) {
@@ -34,7 +39,7 @@ public class HojaDeCalculoSwing {
         /********************
          * JFRAME Y PANELES *
          ********************/
-
+        Hoja hoja;
         JFrame ventana = new JFrame("Hoja de calculo");
         ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         JPanel panel = new JPanel(new BorderLayout()); // Panel principal
@@ -43,10 +48,12 @@ public class HojaDeCalculoSwing {
         JTextPane panelTexto = new JTextPane(); // Panel donde ira el texto de las celdas
         JTextPane panelTextoFilaCol = new JTextPane(); // Panel donde ira la fila y la columna seleccionada
         valores = nuevaHoja(); // Tamaño que tendrá la hoja
-        Hoja hoja = new Hoja(valores[0], valores[1]); // Hoja de calculo
+        Hoja primeraHoja = new Hoja(valores[0], valores[1]); // Hoja de calculo
+        hoja=primeraHoja;
         JScrollPane panelHoja = new JScrollPane(hoja.getTable()); // Panel scrollable al que añado la hoja
+
         /*******************
-         * BARRAS Y MENUS  *
+         * BARRAS Y MENUS *
          *******************/
 
         JMenuBar barra = new JMenuBar(); // La Barra
@@ -68,7 +75,7 @@ public class HojaDeCalculoSwing {
         editar.add(rehacer);
 
         /************************
-         * PROPIEDADES PANELES  *
+         * PROPIEDADES PANELES *
          ************************/
 
         panelTextoFilaCol.setOpaque(true);
@@ -76,10 +83,9 @@ public class HojaDeCalculoSwing {
         panelTextoFilaCol.setEditable(false);
         panelTextoFilaCol.setText("Fila: N/A Columna: N/A");
 
-        /******************
-         *   LISTENERS Y  * 
-         *    ACCIONES    *
-         ******************/
+        /************************
+         * LISTENERS Y ACCIONES *
+         ************************/
 
         hoja.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
 
@@ -89,6 +95,74 @@ public class HojaDeCalculoSwing {
                         + (hoja.getTable().columnAtPoint(e.getPoint()) + 1));
             }
         });
+
+        //Nueva Hoja
+        Action nuevo = new AbstractAction("Nueva hoja") {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+                int nuevosValores[] = nuevaHoja();
+                Hoja nuevaHoja = new Hoja(valores[0], valores[1]);
+                ventana.remove(panelHoja);
+                ventana.add(new JScrollPane(nuevaHoja.getTable()))
+            }
+
+        };
+        nuevo.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+N
+        nueva.setAction(nuevo);
+
+        //Guardar
+        Action guardado = new AbstractAction("Guardar") {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+                System.out.println("Guardar");
+            }
+
+        };
+        guardado.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+S
+        guardar.setAction(guardado);
+
+        //Cargar
+        Action cargado = new AbstractAction("Cargar") {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+                System.out.println("Cargar");
+            }
+
+        };
+        cargado.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+O
+        cargar.setAction(cargado);
+        
+        //Deshacer
+        Action deshaz = new AbstractAction("Deshacer") {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+                System.out.println("Deshacer");
+            }
+
+        };
+        deshaz.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+Z
+        deshacer.setAction(deshaz);
+
+        //Rehacer
+        Action rehaz = new AbstractAction("Rehacer") {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+                System.out.println("Rehacer");
+            }
+
+        };
+        rehaz.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+Y
+        rehacer.setAction(rehaz);
 
         /******************
          * AÑADIR PANELES *
