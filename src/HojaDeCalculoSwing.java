@@ -1,12 +1,15 @@
 import java.util.*;
 import java.awt.*;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -21,39 +24,162 @@ public class HojaDeCalculoSwing {
 
     }
 
+    /**
+     * Metodo que crea la ventana y la hoja de calculo
+     */
     public static void creadorDeVentana() {
+
+        int valores[];
+
+        /********************
+         * JFRAME Y PANELES *
+         ********************/
+
         JFrame ventana = new JFrame("Hoja de calculo");
         ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout()); // Panel principal
         JPanel panelBarraYTexto = new JPanel(new BorderLayout()); // Panel para poner la barra y la celda de texto
         JPanel panelTextos = new JPanel(new BorderLayout()); // Panel para guardar los textos que ira en el otro panel
+        JTextPane panelTexto = new JTextPane(); // Panel donde ira el texto de las celdas
+        JTextPane panelTextoFilaCol = new JTextPane(); // Panel donde ira la fila y la columna seleccionada
+        valores = nuevaHoja(); // Tamaño que tendrá la hoja
+        Hoja hoja = new Hoja(valores[0], valores[1]); // Hoja de calculo
+        JScrollPane panelHoja = new JScrollPane(hoja.getTable()); // Panel scrollable al que añado la hoja
+        /*******************
+         * BARRAS Y MENUS  *
+         *******************/
 
-        /* Barra y menus */
-        JMenuBar barra = new JMenuBar(); // La barra
-        JMenu archivo = new JMenu("Archivo"); // el menu
-        JMenu editar = new JMenu("Editar"); // menu editar
-        // Botones de archivo
+        JMenuBar barra = new JMenuBar(); // La Barra
+        JMenu archivo = new JMenu("Archivo"); // Menu Archivo
+        JMenu editar = new JMenu("Editar"); // Menu Editar
+
+        // Botones del menu Archivo
         JMenuItem nueva = new JMenuItem("Nueva hoja");
         JMenuItem guardar = new JMenuItem("Guardar");
         JMenuItem cargar = new JMenuItem("Cargar");
         archivo.add(nueva);
         archivo.add(guardar);
         archivo.add(cargar);
-        // Botones de editar
+
+        // Botones del menu Editar
         JMenuItem deshacer = new JMenuItem("Deshacer");
         JMenuItem rehacer = new JMenuItem("Rehacer");
         editar.add(deshacer);
         editar.add(rehacer);
-        // Añadir los menus a la barra
+
+        /************************
+         * PROPIEDADES PANELES  *
+         ************************/
+
+        panelTextoFilaCol.setOpaque(true);
+        panelTextoFilaCol.setBackground(new Color(238, 238, 238));
+        panelTextoFilaCol.setEditable(false);
+        panelTextoFilaCol.setText("Fila: N/A Columna: N/A");
+
+        /******************
+         *   LISTENERS Y  * 
+         *    ACCIONES    *
+         ******************/
+
+        hoja.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
+
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                panelTextoFilaCol.setText("Fila: " + (hoja.getTable().rowAtPoint(e.getPoint()) + 1) + " Columna: "
+                        + (hoja.getTable().columnAtPoint(e.getPoint()) + 1));
+            }
+        });
+
+        /******************
+         * AÑADIR PANELES *
+         ******************/
+
         barra.add(archivo);
         barra.add(editar);
 
-        /* Tabla que hará de hoja de calculo */
-        JTable hoja = new JTable(); // (cambiar 50,50 por variable, posible metodo)
+        panelTextos.add(panelTextoFilaCol, BorderLayout.WEST);
+        panelTextos.add(panelTexto, BorderLayout.CENTER);
+
+        panelBarraYTexto.add(barra, BorderLayout.NORTH);
+        panelBarraYTexto.add(panelTextos, BorderLayout.SOUTH);
+
+        panel.add(panelBarraYTexto, BorderLayout.NORTH);
+        panel.add(panelHoja, BorderLayout.CENTER);
+        panel.add(hoja.getNFilaTable(), BorderLayout.WEST);
+
+
+        ventana.add(panel);
+        ventana.pack(); // Mejor tamaño posible
+        ventana.setVisible(true);
+
+    }
+
+    /**
+     * Metodo que pide los datos para una nueva hoja
+     * @return tamaño de filas y columnas para la nueva hoja
+     */
+    public static int[] nuevaHoja() {
+
+        int filasYCol[] = new int[2];
+
+        JTextField pedirFilas = new JTextField(10);
+        JTextField pedirColumnas = new JTextField(10);
+        boolean pidiendo = true;
+
+        JPanel panelAviso = new JPanel();
+        panelAviso.add(new JLabel("Introduzca el numero de Filas: "));
+        panelAviso.add(pedirFilas);
+        panelAviso.add(new JLabel("Introduzca el numero de Columnas: "));
+        panelAviso.add(pedirColumnas);
+
+        while (pidiendo) {
+            int accion = JOptionPane.showConfirmDialog(null, panelAviso, "Introduce las filas y las columnas",
+                    JOptionPane.OK_CANCEL_OPTION);
+
+            if (accion == JOptionPane.OK_OPTION) {
+
+                try {
+                    filasYCol[0] = Integer.parseInt(pedirFilas.getText().trim().replaceAll(" ", ""));
+                    filasYCol[1] = Integer.parseInt(pedirColumnas.getText().trim().replaceAll(" ", ""));
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(null, "Error en filas o columnas.");
+                    continue;
+                }
+                pidiendo = false;
+            }
+        }
+
+        return filasYCol;
+
+    }
+
+}
+
+class Hoja {
+
+    private JTable hoja;
+    private String[][] hojaString;
+    private int nFilas;
+    private int nCol;
+    private Hoja anterior;
+    private Hoja posterior;
+
+
+    /**
+     * Constructor de la hoja de calculo
+     * @param nFilas Numero de filas
+     * @param nCol Numero de columnas
+     */
+    public Hoja(int nFilas, int nCol) {
+        this.nFilas = nFilas;
+        this.nCol = nCol;
+
+        DefaultTableModel modelo = new DefaultTableModel(this.nFilas, this.nCol);
+        this.hoja = new JTable();
         hoja.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        JTable filas = numerosFila(50); // Numeros de las filas
-        DefaultTableModel modelo = new DefaultTableModel(50, 50);
-        modelo.addTableModelListener(new TableModelListener() {
+        hoja.setRowSelectionAllowed(false);
+        hoja.setCellSelectionEnabled(true);
+        modelo.addTableModelListener(new TableModelListener() { // Cambiar por boton
 
             public void tableChanged(TableModelEvent e) {
                 int fila = -1, columna = -1;
@@ -78,74 +204,85 @@ public class HojaDeCalculoSwing {
 
         hoja.setModel(modelo);
 
-        // Añado la hoja al ScollPane y los elementos al panel principal con
-        // BorderLayout
-
-
-        JScrollPane panelHoja = new JScrollPane(hoja); //hoja
-        JTextPane panelTexto = new JTextPane();
-
-        // Panel donde se representaran las filas y las columnas seleccionadas
-        JTextPane panelTextoFilaCol = new JTextPane();
-        panelTextoFilaCol.setOpaque(true);
-        panelTextoFilaCol.setBackground(new Color(238, 238, 238));
-        panelTextoFilaCol.setEditable(false);
-        panelTextoFilaCol.setText("Fila: N/A Columna: N/A");
-
-        hoja.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                panelTextoFilaCol.setText("Fila: " + (hoja.getSelectedRow()+1) + " Columna: " + (hoja.getSelectedColumn() +1 ));
-            }
-            
-        });
-        
-        panelTextos.add(panelTextoFilaCol, BorderLayout.WEST);
-        panelTextos.add(panelTexto, BorderLayout.CENTER);
-
-        panelBarraYTexto.add(barra, BorderLayout.NORTH);
-        panelBarraYTexto.add(panelTextos, BorderLayout.SOUTH);
-
-        panel.add(panelBarraYTexto, BorderLayout.NORTH);
-        panel.add(panelHoja, BorderLayout.CENTER);
-        panel.add(filas, BorderLayout.WEST);
-
-        // Añadir al frame
-        ventana.add(panel);
-        ventana.pack(); // Mejor tamaño posible
-        ventana.setVisible(true);
+        this.hojaString = new String[this.nFilas][this.nCol];
+        this.anterior = null;
+        this.posterior = null;
 
     }
 
-    public static JTable numerosFila(int nFilas) {
+    /*********************
+     * GETTERS Y SETTERS *
+     *********************/
+
+    /**
+     * Metodo que devuelve la hoja de calculo
+     * @return hoja de calculo
+     */
+    public JTable getTable() {
+        return this.hoja;
+    }
+
+    /**
+     * Metodo que calcula la tabla de filas
+     * @return tabla de numero de filas
+     */
+    public JTable getNFilaTable() {
 
         // Tabla que solo tiene 1 columna donde iran los numeros de las filas
-        JTable filas = new JTable(nFilas + 1, 1);
+        JTable filas = new JTable(this.nFilas + 1, 1);
 
         // Le pongo color gris
         Color gris = new Color(238, 238, 238);
         filas.setOpaque(true);
         filas.setFillsViewportHeight(true);
         filas.setBackground(gris);
+
         // Hago que no se pueda seleccionar ni editar
         filas.setRowSelectionAllowed(false);
         filas.setFocusable(false);
+
         // La deshabilito para que no se pueda editar
         filas.setEnabled(false);
+
         // Altura de las filas para que encaje con la tabla
         filas.setRowHeight(16);
         filas.setRowHeight(0, 21);
 
         // Le pongo el texto de los numeros a las casillas
-        for (int i = 1; i <= nFilas; i++) {
+        for (int i = 1; i <= this.nFilas; i++) {
             filas.setValueAt(String.valueOf(i), i, 0);
         }
 
         return filas;
     }
 
+    /**
+     * Metodo que cambia la tabla anterior
+     * @param anterior nueva tabla anterior
+     */
+    public void setAnterior(Hoja anterior){
+        this.anterior = anterior;
+    }
 
-    public static String resolverFormula(Formula form){
+    /**
+     * Metodo que cambia la tabla posterior
+     * @param posterior nueva tabla posterior
+     */
+    public void setPosterior(Hoja posterior){
+        this.posterior = posterior;
+    }
+
+
+    /********************
+     * RESOLVER FORMULA *
+     ********************/
+
+    /**
+     * Metodo que resuelve una formula
+     * @param form Formula
+     * @return valor numérico de la formula
+     */
+    public static String resolverFormula(Formula form) {
         String formula = form.getFormula();
         JTable hoja = form.getHoja();
         int valor = 0;
@@ -162,16 +299,16 @@ public class HojaDeCalculoSwing {
                 int fila = casillas.get(i)[0];
                 int columna = casillas.get(i)[1];
 
-                if(fila == -1 || columna == -1){
+                if (fila == -1 || columna == -1) {
                     return "##1ERRORFORM";
                 }
 
-                if( String.valueOf(hoja.getValueAt( casillas.get(i)[0], casillas.get(i)[1])).isEmpty() ){
-                    valor = valor + 0; //Puede cambiar, dependiendo especificaciones
-                }else{
-                valor = valor + Integer.parseInt(String.valueOf(hoja.getValueAt(fila, columna)));
+                if (String.valueOf(hoja.getValueAt(casillas.get(i)[0], casillas.get(i)[1])).isEmpty()) {
+                    valor = valor + 0; // Puede cambiar, dependiendo especificaciones
+                } else {
+                    valor = valor + Integer.parseInt(String.valueOf(hoja.getValueAt(fila, columna)));
                 }
-                
+
             }
 
         } catch (Exception e) {
@@ -180,6 +317,11 @@ public class HojaDeCalculoSwing {
         return String.valueOf(valor);
     }
 
+    /**
+     * Metodo que descifra una casilla
+     * @param casilla Casilla en formato letra(columna) numero(fila) Ejemplo: A1
+     * @return casilla en formato [fila][columna] Ejemplo: [0][0]
+     */
     public static int[] descifrarCasilla(String casilla) {
         final String abecedario = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         int[] casillas = new int[2];
@@ -192,8 +334,8 @@ public class HojaDeCalculoSwing {
             if (!(abecedario.contains(String.valueOf(casilla.charAt(i))))) {
 
                 if (i == 0) {
-                    casillas[0]= -1;
-                    casillas[1]= -1;
+                    casillas[0] = -1;
+                    casillas[1] = -1;
                     return casillas;
                 }
                 iFil = i;
@@ -203,10 +345,10 @@ public class HojaDeCalculoSwing {
         } while (buscando && i < casilla.length());
 
         try {
-            casillas[0] = Integer.parseInt(casilla.substring(iFil)) -1;
+            casillas[0] = Integer.parseInt(casilla.substring(iFil)) - 1;
         } catch (Exception e) {
-            casillas[0]= -1;
-            casillas[1]= -1;
+            casillas[0] = -1;
+            casillas[1] = -1;
             return casillas;
         }
 
@@ -218,8 +360,8 @@ public class HojaDeCalculoSwing {
                 int indice = (abecedario.indexOf(columnas.charAt(i)) + 1);
 
                 if (indice < 0) {
-                    casillas[0]= -1;
-                    casillas[1]= -1;
+                    casillas[0] = -1;
+                    casillas[1] = -1;
                     return casillas;
                 }
                 // para calcular el valor en base 26 ValorDec * sistemadenum ^ indice
@@ -228,8 +370,8 @@ public class HojaDeCalculoSwing {
                 iCol--;
             }
         } catch (Exception e) {
-            casillas[0]= -1;
-            casillas[1]= -1;
+            casillas[0] = -1;
+            casillas[1] = -1;
             return casillas;
         }
 
@@ -289,7 +431,7 @@ class Formula {
         return this.colFormula;
     }
 
-    public JTable getHoja(){
+    public JTable getHoja() {
         return this.hoja;
     }
 
