@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -47,6 +48,7 @@ public class HojaDeCalculoSwing {
         JPanel panelTextos = new JPanel(new BorderLayout()); // Panel para guardar los textos que ira en el otro panel
         JTextPane panelTexto = new JTextPane(); // Panel donde ira el texto de las celdas
         JTextPane panelTextoFilaCol = new JTextPane(); // Panel donde ira la fila y la columna seleccionada
+        JButton botonCalcular = new JButton("Calcular");
         valores = nuevaHoja(); // Tamaño que tendrá la hoja
         Hoja primeraHoja = new Hoja(valores[0], valores[1]); // Hoja de calculo
         hoja=primeraHoja;
@@ -101,11 +103,13 @@ public class HojaDeCalculoSwing {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                
+                /*
                 int nuevosValores[] = nuevaHoja();
                 Hoja nuevaHoja = new Hoja(valores[0], valores[1]);
+                hoja = nuevaHoja;
                 ventana.remove(panelHoja);
-                ventana.add(new JScrollPane(nuevaHoja.getTable()))
+                ventana.add(new JScrollPane(nuevaHoja.getTable()));
+                */
             }
 
         };
@@ -164,6 +168,18 @@ public class HojaDeCalculoSwing {
         rehaz.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+Y
         rehacer.setAction(rehaz);
 
+        //Calcular
+        Action calcula = new AbstractAction("Calcular") {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+                System.out.println("Calcular");
+            }
+
+        };
+        botonCalcular.setAction(calcula);
+
         /******************
          * AÑADIR PANELES *
          ******************/
@@ -173,6 +189,7 @@ public class HojaDeCalculoSwing {
 
         panelTextos.add(panelTextoFilaCol, BorderLayout.WEST);
         panelTextos.add(panelTexto, BorderLayout.CENTER);
+        panelTextos.add(botonCalcular, BorderLayout.EAST);
 
         panelBarraYTexto.add(barra, BorderLayout.NORTH);
         panelBarraYTexto.add(panelTextos, BorderLayout.SOUTH);
@@ -451,6 +468,14 @@ class Hoja {
 
         casillas[1] = iCol;
         return casillas;
+    }
+
+
+    public void nuevaHoja(int nFilas, int nCol){
+
+
+       /* this = new Hoja(nFilas, nCol);*/
+
     }
 
 }
