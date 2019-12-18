@@ -18,13 +18,16 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.KeyEvent;
 
-
 public class HojaDeCalculoSwing {
+
+    private static JTable tablaImportada;
+
     public static void main(String[] args) {
         creadorDeVentana();
 
@@ -49,9 +52,16 @@ public class HojaDeCalculoSwing {
         JTextPane panelTexto = new JTextPane(); // Panel donde ira el texto de las celdas
         JTextPane panelTextoFilaCol = new JTextPane(); // Panel donde ira la fila y la columna seleccionada
         JButton botonCalcular = new JButton("Calcular");
-        valores = nuevaHoja(); // Tamaño que tendrá la hoja
-        Hoja primeraHoja = new Hoja(valores[0], valores[1]); // Hoja de calculo
-        hoja=primeraHoja;
+        valores = new int [2];
+        hoja = new Hoja(); // Hoja de calculo
+
+        JTable tabla = inicio(valores);
+
+        if(tabla == null){
+            hoja.nuevaHoja(valores[0], valores[1]);
+        }else{
+            //hoja.setTable(tabla); falta implementar
+        }
         JScrollPane panelHoja = new JScrollPane(hoja.getTable()); // Panel scrollable al que añado la hoja
 
         /*******************
@@ -98,82 +108,96 @@ public class HojaDeCalculoSwing {
             }
         });
 
-        //Nueva Hoja
+        // Nueva Hoja
         Action nuevo = new AbstractAction("Nueva hoja") {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                /*
-                int nuevosValores[] = nuevaHoja();
-                Hoja nuevaHoja = new Hoja(valores[0], valores[1]);
-                hoja = nuevaHoja;
-                ventana.remove(panelHoja);
-                ventana.add(new JScrollPane(nuevaHoja.getTable()));
-                */
+                int[] nuevosValores = nuevaHoja();
+
+                panel.remove(panelHoja);
+                panel.remove(hoja.getNFilaTable());
+                panelHoja.remove(hoja.getTable());
+
+                hoja.nuevaHoja(nuevosValores[0], nuevosValores[1]);
+
+                panelHoja.setViewportView(hoja.getTable());
+                panel.add(hoja.getNFilaTable(), BorderLayout.WEST);
+                panel.add(panelHoja, BorderLayout.CENTER);
+                SwingUtilities.updateComponentTreeUI(ventana);
+                hoja.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
+
+                    @Override
+                    public void mouseClicked(java.awt.event.MouseEvent e) {
+                        panelTextoFilaCol.setText("Fila: " + (hoja.getTable().rowAtPoint(e.getPoint()) + 1) + " Columna: "
+                                + (hoja.getTable().columnAtPoint(e.getPoint()) + 1));
+                    }
+                });
+
             }
 
         };
-        nuevo.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+N
+        nuevo.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK)); // Para el shortcut CTRL+N                                                                     
         nueva.setAction(nuevo);
 
-        //Guardar
+        // Guardar
         Action guardado = new AbstractAction("Guardar") {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                
+
                 System.out.println("Guardar");
             }
 
         };
-        guardado.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+S
+        guardado.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK)); // Para el shortcut CTRL+S
         guardar.setAction(guardado);
 
-        //Cargar
+        // Cargar
         Action cargado = new AbstractAction("Cargar") {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                
+
                 System.out.println("Cargar");
             }
 
         };
-        cargado.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+O
+        cargado.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK)); // Para el shortcut CTRL+O
         cargar.setAction(cargado);
-        
-        //Deshacer
+
+        // Deshacer
         Action deshaz = new AbstractAction("Deshacer") {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                
+
                 System.out.println("Deshacer");
             }
 
         };
-        deshaz.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+Z
+        deshaz.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK)); // Para el shortcut CTRL+Z
         deshacer.setAction(deshaz);
 
-        //Rehacer
+        // Rehacer
         Action rehaz = new AbstractAction("Rehacer") {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                
+
                 System.out.println("Rehacer");
             }
 
         };
-        rehaz.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK)); //Para el shortcut CTRL+Y
+        rehaz.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK)); // Para el shortcut CTRL+Y
         rehacer.setAction(rehaz);
 
-        //Calcular
+        // Calcular
         Action calcula = new AbstractAction("Calcular") {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                
+
                 System.out.println("Calcular");
             }
 
@@ -198,15 +222,58 @@ public class HojaDeCalculoSwing {
         panel.add(panelHoja, BorderLayout.CENTER);
         panel.add(hoja.getNFilaTable(), BorderLayout.WEST);
 
-
         ventana.add(panel);
         ventana.pack(); // Mejor tamaño posible
         ventana.setVisible(true);
 
     }
 
+    public static JTable inicio(int[] valores){
+
+        tablaImportada = null;
+        JButton OpcionNuevaHoja = new JButton("Crear nueva hoja");
+        JButton OpcionAbrirHoja = new JButton("Abrir hoja existente");
+        JOptionPane elegir = new JOptionPane();
+
+        JPanel panelAviso = new JPanel();
+        panelAviso.add(new JLabel("Bienvenido, ¿Qué desea hacer?"));
+        panelAviso.add(OpcionNuevaHoja);
+        panelAviso.add(OpcionAbrirHoja);
+
+        Action nuevaHoja = new AbstractAction("Crear nueva hoja") {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                int guardaValores[] = nuevaHoja();
+                valores[0] = guardaValores[0];
+                valores[1] = guardaValores[1];
+                JOptionPane.getRootFrame().dispose();  
+            }
+
+        };
+
+        Action abrirHoja = new AbstractAction("Abrir hoja existente") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                tablaImportada = abrirHoja();
+                JOptionPane.getRootFrame().dispose();  
+            }
+        };
+   
+    
+        OpcionNuevaHoja.setAction(nuevaHoja);
+        OpcionAbrirHoja.setAction(abrirHoja);
+        
+
+        elegir.showOptionDialog(null, "Bienvenido, ¿Qué desea hacer?", "Hoja de calculo", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[]{OpcionNuevaHoja, OpcionAbrirHoja}, OpcionNuevaHoja);
+        
+        return tablaImportada;
+    }
+
     /**
      * Metodo que pide los datos para una nueva hoja
+     * 
      * @return tamaño de filas y columnas para la nueva hoja
      */
     public static int[] nuevaHoja() {
@@ -244,61 +311,33 @@ public class HojaDeCalculoSwing {
 
     }
 
+    public static JTable abrirHoja(){
+
+        JOptionPane mensaje = new JOptionPane();
+
+        mensaje.showMessageDialog(null, "Aun no implementado");
+
+        return null;
+    }
+
 }
 
 class Hoja {
 
     private JTable hoja;
+    private JTable hojaFilas;
     private String[][] hojaString;
     private int nFilas;
     private int nCol;
     private Hoja anterior;
     private Hoja posterior;
-
+    private boolean editado;
 
     /**
      * Constructor de la hoja de calculo
-     * @param nFilas Numero de filas
-     * @param nCol Numero de columnas
      */
-    public Hoja(int nFilas, int nCol) {
-        this.nFilas = nFilas;
-        this.nCol = nCol;
-
-        DefaultTableModel modelo = new DefaultTableModel(this.nFilas, this.nCol);
-        this.hoja = new JTable();
-        hoja.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        hoja.setRowSelectionAllowed(false);
-        hoja.setCellSelectionEnabled(true);
-        modelo.addTableModelListener(new TableModelListener() { // Cambiar por boton
-
-            public void tableChanged(TableModelEvent e) {
-                int fila = -1, columna = -1;
-                Object value = "";
-                if (hoja.isEditing()) {
-                    fila = hoja.getSelectedRow();
-                    columna = hoja.getSelectedColumn();
-                    value = hoja.getValueAt(fila, columna);
-                }
-
-                if (fila != -1 && columna != -1 && !String.valueOf(value).isEmpty()) {
-
-                    if (String.valueOf(value).charAt(0) == '=') {
-                        Formula formula = new Formula(String.valueOf(value), fila, columna, hoja);
-                        hoja.setValueAt(resolverFormula(formula), fila, columna);
-                    }
-                }
-
-            }
-
-        });
-
-        hoja.setModel(modelo);
-
-        this.hojaString = new String[this.nFilas][this.nCol];
-        this.anterior = null;
-        this.posterior = null;
-
+    public Hoja() {
+        hojaFilas = null;
     }
 
     /*********************
@@ -307,6 +346,7 @@ class Hoja {
 
     /**
      * Metodo que devuelve la hoja de calculo
+     * 
      * @return hoja de calculo
      */
     public JTable getTable() {
@@ -315,54 +355,69 @@ class Hoja {
 
     /**
      * Metodo que calcula la tabla de filas
+     * 
      * @return tabla de numero de filas
      */
     public JTable getNFilaTable() {
 
-        // Tabla que solo tiene 1 columna donde iran los numeros de las filas
-        JTable filas = new JTable(this.nFilas + 1, 1);
+        if (this.hojaFilas != null) {
+            return this.hojaFilas;
+        } else {
+            // Tabla que solo tiene 1 columna donde iran los numeros de las filas
+            JTable filas = new JTable(this.nFilas + 1, 1);
 
-        // Le pongo color gris
-        Color gris = new Color(238, 238, 238);
-        filas.setOpaque(true);
-        filas.setFillsViewportHeight(true);
-        filas.setBackground(gris);
+            // Le pongo color gris
+            Color gris = new Color(238, 238, 238);
+            filas.setOpaque(true);
+            filas.setFillsViewportHeight(true);
+            filas.setBackground(gris);
 
-        // Hago que no se pueda seleccionar ni editar
-        filas.setRowSelectionAllowed(false);
-        filas.setFocusable(false);
+            // Hago que no se pueda seleccionar ni editar
+            filas.setRowSelectionAllowed(false);
+            filas.setFocusable(false);
 
-        // La deshabilito para que no se pueda editar
-        filas.setEnabled(false);
+            // La deshabilito para que no se pueda editar
+            filas.setEnabled(false);
 
-        // Altura de las filas para que encaje con la tabla
-        filas.setRowHeight(16);
-        filas.setRowHeight(0, 21);
+            // Altura de las filas para que encaje con la tabla
+            filas.setRowHeight(16);
+            filas.setRowHeight(0, 21);
 
-        // Le pongo el texto de los numeros a las casillas
-        for (int i = 1; i <= this.nFilas; i++) {
-            filas.setValueAt(String.valueOf(i), i, 0);
+            // Le pongo el texto de los numeros a las casillas
+            for (int i = 1; i <= this.nFilas; i++) {
+                filas.setValueAt(String.valueOf(i), i, 0);
+            }
+
+            this.hojaFilas = filas;
+            return this.hojaFilas;
         }
-
-        return filas;
     }
 
     /**
      * Metodo que cambia la tabla anterior
+     * 
      * @param anterior nueva tabla anterior
      */
-    public void setAnterior(Hoja anterior){
+    public void setAnterior(Hoja anterior) {
         this.anterior = anterior;
     }
 
     /**
      * Metodo que cambia la tabla posterior
+     * 
      * @param posterior nueva tabla posterior
      */
-    public void setPosterior(Hoja posterior){
+    public void setPosterior(Hoja posterior) {
         this.posterior = posterior;
     }
 
+    /**
+     * Metodo para decir si la hoja ha sido editada
+     * @param editado si ha sido editada o no
+     */
+    public void setEditado(boolean editado){
+        this.editado = editado;
+    }
 
     /********************
      * RESOLVER FORMULA *
@@ -370,6 +425,7 @@ class Hoja {
 
     /**
      * Metodo que resuelve una formula
+     * 
      * @param form Formula
      * @return valor numérico de la formula
      */
@@ -410,6 +466,7 @@ class Hoja {
 
     /**
      * Metodo que descifra una casilla
+     * 
      * @param casilla Casilla en formato letra(columna) numero(fila) Ejemplo: A1
      * @return casilla en formato [fila][columna] Ejemplo: [0][0]
      */
@@ -470,11 +527,47 @@ class Hoja {
         return casillas;
     }
 
+    public void nuevaHoja(int nFilas, int nCol) {
 
-    public void nuevaHoja(int nFilas, int nCol){
+        this.nFilas = nFilas;
+        this.nCol = nCol;
 
+        DefaultTableModel modelo = new DefaultTableModel(this.nFilas, this.nCol);
+        this.hoja = new JTable();
+        hoja.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        hoja.setRowSelectionAllowed(false);
+        hoja.setCellSelectionEnabled(true);
+        modelo.addTableModelListener(new TableModelListener() { // Cambiar por boton
 
-       /* this = new Hoja(nFilas, nCol);*/
+            public void tableChanged(TableModelEvent e) {
+                int fila = -1, columna = -1;
+                editado = true;
+                Object value = "";
+                if (hoja.isEditing()) {
+                    fila = hoja.getSelectedRow();
+                    columna = hoja.getSelectedColumn();
+                    value = hoja.getValueAt(fila, columna);
+                }
+
+                if (fila != -1 && columna != -1 && !String.valueOf(value).isEmpty()) {
+
+                    if (String.valueOf(value).charAt(0) == '=') {
+                        Formula formula = new Formula(String.valueOf(value), fila, columna, hoja);
+                        hoja.setValueAt(resolverFormula(formula), fila, columna);
+                    }
+                }
+
+            }
+
+        });
+
+        hoja.setModel(modelo);
+
+        this.hojaString = new String[this.nFilas][this.nCol];
+        this.anterior = null;
+        this.posterior = null;
+        this.hojaFilas = null;
+        this.editado = false;
 
     }
 
