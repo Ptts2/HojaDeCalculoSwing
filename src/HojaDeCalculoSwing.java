@@ -1,5 +1,4 @@
 import java.util.*;
-import java.util.ResourceBundle.Control;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
@@ -52,17 +51,21 @@ public class HojaDeCalculoSwing {
         JTextPane panelTexto = new JTextPane(); // Panel donde ira el texto de las celdas
         JTextPane panelTextoFilaCol = new JTextPane(); // Panel donde ira la fila y la columna seleccionada
         JButton botonCalcular = new JButton("Calcular");
+        JScrollPane panelHoja; // Panel scrollable al que añado la hoja
+        JScrollPane filas; //Panel donde iran los numeros de fila
+        JTable tabla; //tabla a añadir
         valores = new int [2];
         hoja = new Hoja(); // Hoja de calculo
 
-        JTable tabla = inicio(valores);
+        tabla = inicio(valores);
 
         if(tabla == null){
             hoja.nuevaHoja(valores[0], valores[1]);
         }else{
             //hoja.setTable(tabla); falta implementar
         }
-        JScrollPane panelHoja = new JScrollPane(hoja.getTable()); // Panel scrollable al que añado la hoja
+        panelHoja = new JScrollPane(hoja.getTable());
+        filas = new JScrollPane(hoja.getNFilaTable());
 
         /*******************
          * BARRAS Y MENUS *
@@ -94,6 +97,9 @@ public class HojaDeCalculoSwing {
         panelTextoFilaCol.setBackground(new Color(238, 238, 238));
         panelTextoFilaCol.setEditable(false);
         panelTextoFilaCol.setText("Fila: N/A Columna: N/A");
+        filas.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        filas.getVerticalScrollBar().setModel(panelHoja.getVerticalScrollBar().getModel());
+        filas.setPreferredSize(new Dimension(100,16));
 
         /************************
          * LISTENERS Y ACCIONES *
@@ -115,29 +121,32 @@ public class HojaDeCalculoSwing {
             public void actionPerformed(ActionEvent e) {
                 int[] nuevosValores = nuevaHoja();
 
-                panel.remove(panelHoja);
-                panel.remove(hoja.getNFilaTable());
-                panelHoja.remove(hoja.getTable());
+                if(nuevosValores[0] > 0 && nuevosValores[1] >0){
+                    panel.remove(panelHoja);
+                    panel.remove(hoja.getNFilaTable());
+                    panelHoja.remove(hoja.getTable());
+                    panel.remove(filas);
 
-                hoja.nuevaHoja(nuevosValores[0], nuevosValores[1]);
+                    hoja.nuevaHoja(nuevosValores[0], nuevosValores[1]);
 
-                panelHoja.setViewportView(hoja.getTable());
-                panel.add(hoja.getNFilaTable(), BorderLayout.WEST);
-                panel.add(panelHoja, BorderLayout.CENTER);
-                SwingUtilities.updateComponentTreeUI(ventana);
-                hoja.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
+                    panelHoja.setViewportView(hoja.getTable());
+                    filas.setViewportView(hoja.getNFilaTable());
+                    panel.add(filas, BorderLayout.WEST);
+                    panel.add(panelHoja, BorderLayout.CENTER);
+                    SwingUtilities.updateComponentTreeUI(ventana);
+                    hoja.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
 
-                    @Override
-                    public void mouseClicked(java.awt.event.MouseEvent e) {
-                        panelTextoFilaCol.setText("Fila: " + (hoja.getTable().rowAtPoint(e.getPoint()) + 1) + " Columna: "
-                                + (hoja.getTable().columnAtPoint(e.getPoint()) + 1));
-                    }
-                });
-
+                        @Override
+                        public void mouseClicked(java.awt.event.MouseEvent e) {
+                            panelTextoFilaCol.setText("Fila: " + (hoja.getTable().rowAtPoint(e.getPoint()) + 1) + " Columna: "
+                                    + (hoja.getTable().columnAtPoint(e.getPoint()) + 1));
+                        }
+                    });
+                }
             }
 
         };
-        nuevo.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK)); // Para el shortcut CTRL+N                                                                     
+        nuevo.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK)); // Para el shortcut CTRL+N                                                                
         nueva.setAction(nuevo);
 
         // Guardar
@@ -220,7 +229,7 @@ public class HojaDeCalculoSwing {
 
         panel.add(panelBarraYTexto, BorderLayout.NORTH);
         panel.add(panelHoja, BorderLayout.CENTER);
-        panel.add(hoja.getNFilaTable(), BorderLayout.WEST);
+        panel.add(filas, BorderLayout.WEST);
 
         ventana.add(panel);
         ventana.pack(); // Mejor tamaño posible
@@ -240,6 +249,7 @@ public class HojaDeCalculoSwing {
         panelAviso.add(OpcionNuevaHoja);
         panelAviso.add(OpcionAbrirHoja);
 
+        
         Action nuevaHoja = new AbstractAction("Crear nueva hoja") {
 
             @Override
@@ -248,10 +258,13 @@ public class HojaDeCalculoSwing {
                 int guardaValores[] = nuevaHoja();
                 valores[0] = guardaValores[0];
                 valores[1] = guardaValores[1];
-                JOptionPane.getRootFrame().dispose();  
+
+                if(valores[0] != 0 && valores[1] != 0)
+                    JOptionPane.getRootFrame().dispose();  
             }
 
         };
+        
 
         Action abrirHoja = new AbstractAction("Abrir hoja existente") {
             @Override
@@ -299,10 +312,19 @@ public class HojaDeCalculoSwing {
                 try {
                     filasYCol[0] = Integer.parseInt(pedirFilas.getText().trim().replaceAll(" ", ""));
                     filasYCol[1] = Integer.parseInt(pedirColumnas.getText().trim().replaceAll(" ", ""));
+
+                    if(filasYCol[0] <= 0 || filasYCol[1] <= 0){
+                        JOptionPane.showMessageDialog(null, "Error en filas o columnas.");
+                        continue;
+                    }
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(null, "Error en filas o columnas.");
                     continue;
                 }
+                pidiendo = false;
+            }
+
+            if(accion == JOptionPane.CANCEL_OPTION){
                 pidiendo = false;
             }
         }
@@ -364,8 +386,8 @@ class Hoja {
             return this.hojaFilas;
         } else {
             // Tabla que solo tiene 1 columna donde iran los numeros de las filas
-            JTable filas = new JTable(this.nFilas + 1, 1);
-
+            JTable filas = new JTable(this.nFilas + 2, 1);
+            
             // Le pongo color gris
             Color gris = new Color(238, 238, 238);
             filas.setOpaque(true);
@@ -382,6 +404,9 @@ class Hoja {
             // Altura de las filas para que encaje con la tabla
             filas.setRowHeight(16);
             filas.setRowHeight(0, 21);
+
+            //Le quito la cabecera y le cambio la anchura
+            filas.setTableHeader(null);
 
             // Le pongo el texto de los numeros a las casillas
             for (int i = 1; i <= this.nFilas; i++) {
