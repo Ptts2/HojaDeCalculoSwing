@@ -22,6 +22,8 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class HojaDeCalculoSwing {
 
@@ -44,7 +46,7 @@ public class HojaDeCalculoSwing {
          ********************/
         Hoja hoja;
         JFrame ventana = new JFrame("Hoja de calculo");
-        ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        ventana.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         JPanel panel = new JPanel(new BorderLayout()); // Panel principal
         JPanel panelBarraYTexto = new JPanel(new BorderLayout()); // Panel para poner la barra y la celda de texto
         JPanel panelTextos = new JPanel(new BorderLayout()); // Panel para guardar los textos que ira en el otro panel
@@ -105,6 +107,26 @@ public class HojaDeCalculoSwing {
          * LISTENERS Y ACCIONES *
          ************************/
 
+
+        ventana.addWindowListener(new WindowAdapter(){
+            
+            @Override
+            public void windowClosing(WindowEvent e){
+
+                if(!hoja.equals(null) && hoja.isEditado()){
+                    boolean salir = noGuardado();
+
+                    if(salir == true){
+                        System.exit(0);
+                    }
+
+                }else{
+
+                    System.exit(0);
+                }
+            }
+
+        });
         hoja.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
 
             @Override
@@ -156,6 +178,7 @@ public class HojaDeCalculoSwing {
             public void actionPerformed(ActionEvent e) {
 
                 System.out.println("Guardar");
+                hoja.setEditado(false);
             }
 
         };
@@ -242,7 +265,6 @@ public class HojaDeCalculoSwing {
         tablaImportada = null;
         JButton OpcionNuevaHoja = new JButton("Crear nueva hoja");
         JButton OpcionAbrirHoja = new JButton("Abrir hoja existente");
-        JOptionPane elegir = new JOptionPane();
 
         JPanel panelAviso = new JPanel();
         panelAviso.add(new JLabel("Bienvenido, ¿Qué desea hacer?"));
@@ -279,7 +301,7 @@ public class HojaDeCalculoSwing {
         OpcionAbrirHoja.setAction(abrirHoja);
         
 
-        elegir.showOptionDialog(null, "Bienvenido, ¿Qué desea hacer?", "Hoja de calculo", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[]{OpcionNuevaHoja, OpcionAbrirHoja}, OpcionNuevaHoja);
+        JOptionPane.showOptionDialog(null, "Bienvenido, ¿Qué desea hacer?", "Hoja de calculo", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[]{OpcionNuevaHoja, OpcionAbrirHoja}, OpcionNuevaHoja);
         
         return tablaImportada;
     }
@@ -333,11 +355,26 @@ public class HojaDeCalculoSwing {
 
     }
 
+    public static boolean noGuardado(){
+        
+        int opcion = JOptionPane.showConfirmDialog(null, "Los cambios no han sido guardados, ¿Desea guardarlos?");
+
+        if(opcion == JOptionPane.YES_OPTION){
+            return false; //Iria el acceso al metodo de guardar
+        }else if(opcion == JOptionPane.NO_OPTION){
+            return true;
+            
+        }else if(opcion == JOptionPane.CANCEL_OPTION){
+            return false;
+           
+        }
+        return false;
+
+    }
+
     public static JTable abrirHoja(){
 
-        JOptionPane mensaje = new JOptionPane();
-
-        mensaje.showMessageDialog(null, "Aun no implementado");
+        JOptionPane.showMessageDialog(null, "Aun no implementado");
 
         return null;
     }
@@ -362,6 +399,55 @@ class Hoja {
         hojaFilas = null;
     }
 
+    /**
+     * Crea una nueva hoja con las filas y las columnas
+     * @param nFilas nuevas filas
+     * @param nCol nuevas columnas
+     */
+    public void nuevaHoja(int nFilas, int nCol) {
+
+        this.nFilas = nFilas;
+        this.nCol = nCol;
+
+        DefaultTableModel modelo = new DefaultTableModel(this.nFilas, this.nCol);
+        this.hoja = new JTable();
+        hoja.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        hoja.setRowSelectionAllowed(false);
+        hoja.setCellSelectionEnabled(true);
+        modelo.addTableModelListener(new TableModelListener() { // Cambiar por boton
+
+            public void tableChanged(TableModelEvent e) {
+                int fila = -1, columna = -1;
+                editado = true;
+                Object value = "";
+                if (hoja.isEditing()) {
+                    fila = hoja.getSelectedRow();
+                    columna = hoja.getSelectedColumn();
+                    value = hoja.getValueAt(fila, columna);
+                }
+
+                if (fila != -1 && columna != -1 && !String.valueOf(value).isEmpty()) {
+
+                    if (String.valueOf(value).charAt(0) == '=') {
+                        Formula formula = new Formula(String.valueOf(value), fila, columna, hoja);
+                        hoja.setValueAt(resolverFormula(formula), fila, columna);
+                    }
+                }
+
+            }
+
+        });
+
+        hoja.setModel(modelo);
+
+        this.hojaString = new String[this.nFilas][this.nCol];
+        this.anterior = null;
+        this.posterior = null;
+        this.hojaFilas = null;
+        this.editado = false;
+
+    }
+
     /*********************
      * GETTERS Y SETTERS *
      *********************/
@@ -375,6 +461,14 @@ class Hoja {
         return this.hoja;
     }
 
+    /**
+     * Metodo que dice si la hoja ha sido editada
+     * @return si ha sido editada true, si no false
+     */
+    public boolean isEditado(){
+
+        return this.editado;
+    }
     /**
      * Metodo que calcula la tabla de filas
      * 
@@ -550,50 +644,6 @@ class Hoja {
 
         casillas[1] = iCol;
         return casillas;
-    }
-
-    public void nuevaHoja(int nFilas, int nCol) {
-
-        this.nFilas = nFilas;
-        this.nCol = nCol;
-
-        DefaultTableModel modelo = new DefaultTableModel(this.nFilas, this.nCol);
-        this.hoja = new JTable();
-        hoja.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        hoja.setRowSelectionAllowed(false);
-        hoja.setCellSelectionEnabled(true);
-        modelo.addTableModelListener(new TableModelListener() { // Cambiar por boton
-
-            public void tableChanged(TableModelEvent e) {
-                int fila = -1, columna = -1;
-                editado = true;
-                Object value = "";
-                if (hoja.isEditing()) {
-                    fila = hoja.getSelectedRow();
-                    columna = hoja.getSelectedColumn();
-                    value = hoja.getValueAt(fila, columna);
-                }
-
-                if (fila != -1 && columna != -1 && !String.valueOf(value).isEmpty()) {
-
-                    if (String.valueOf(value).charAt(0) == '=') {
-                        Formula formula = new Formula(String.valueOf(value), fila, columna, hoja);
-                        hoja.setValueAt(resolverFormula(formula), fila, columna);
-                    }
-                }
-
-            }
-
-        });
-
-        hoja.setModel(modelo);
-
-        this.hojaString = new String[this.nFilas][this.nCol];
-        this.anterior = null;
-        this.posterior = null;
-        this.hojaFilas = null;
-        this.editado = false;
-
     }
 
 }
