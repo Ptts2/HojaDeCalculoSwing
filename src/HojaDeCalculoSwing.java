@@ -281,7 +281,7 @@ public class HojaDeCalculoSwing {
                 valores[0] = guardaValores[0];
                 valores[1] = guardaValores[1];
 
-                if(valores[0] != 0 && valores[1] != 0)
+                if(valores[0] > 0 && valores[1] > 0)
                     JOptionPane.getRootFrame().dispose();  
             }
 
