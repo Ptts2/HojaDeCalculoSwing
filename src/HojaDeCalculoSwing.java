@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -20,10 +21,12 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 
 public class HojaDeCalculoSwing {
 
@@ -50,7 +53,7 @@ public class HojaDeCalculoSwing {
         JPanel panel = new JPanel(new BorderLayout()); // Panel principal
         JPanel panelBarraYTexto = new JPanel(new BorderLayout()); // Panel para poner la barra y la celda de texto
         JPanel panelTextos = new JPanel(new BorderLayout()); // Panel para guardar los textos que ira en el otro panel
-        JTextPane panelTexto = new JTextPane(); // Panel donde ira el texto de las celdas
+        JTextPane panelTexto = new JTextPane(); // Panel separacion
         JTextPane panelTextoFilaCol = new JTextPane(); // Panel donde ira la fila y la columna seleccionada
         JButton botonCalcular = new JButton("Calcular");
         JScrollPane panelHoja; // Panel scrollable al que añado la hoja
@@ -102,6 +105,9 @@ public class HojaDeCalculoSwing {
         filas.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         filas.getVerticalScrollBar().setModel(panelHoja.getVerticalScrollBar().getModel());
         filas.setPreferredSize(new Dimension(100,16));
+        panelTexto.setOpaque(true);
+        panelTexto.setBackground(new Color(238, 238, 238));
+        panelTexto.setEditable(false);
 
         /************************
          * LISTENERS Y ACCIONES *
@@ -181,7 +187,8 @@ public class HojaDeCalculoSwing {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                System.out.println("Guardar");
+                hoja.guardar();
+
                 hoja.setEditado(false);
             }
 
@@ -195,7 +202,7 @@ public class HojaDeCalculoSwing {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                System.out.println("Cargar");
+                
             }
 
         };
@@ -395,6 +402,7 @@ class Hoja {
     private Hoja anterior;
     private Hoja posterior;
     private boolean editado;
+    private File archivoHoja;
 
     /**
      * Constructor de la hoja de calculo
@@ -703,6 +711,56 @@ class Hoja {
         return casillas;
     }
 
+     /*********************
+     *   GUARDAR Y ABRIR  *
+     *********************/
+
+    public void guardar (){
+
+
+        if(archivoHoja == null){
+            JFileChooser elegir = new JFileChooser();
+            FileNameExtensionFilter filtro = new FileNameExtensionFilter("Hojas de calculo con extension TXT", "txt");
+            elegir.setFileFilter(filtro);
+            boolean pedir = true;
+
+            while(pedir){
+
+                int opcion = elegir.showOpenDialog(null);
+                
+
+                if(opcion == JFileChooser.CANCEL_OPTION){
+                    pedir = false;
+
+                    //Si no existe el archivo
+                }else if(! (elegir.getSelectedFile().toString().endsWith(".txt") ? elegir.getSelectedFile().exists() : new File(elegir.getSelectedFile().toString()+".txt").exists())){
+
+                    int opc2 = JOptionPane.showConfirmDialog(elegir, "No existe el archivo, ¿Desea crearlo?");
+
+                    if(opc2 == JOptionPane.OK_OPTION){
+                        pedir = false;
+                        archivoHoja = elegir.getSelectedFile();
+
+                        if(!archivoHoja.toString().endsWith(".txt")){
+                            archivoHoja = new File(archivoHoja.toString() +".txt");
+                        }
+                        try{
+                            archivoHoja.createNewFile();
+                        }catch(Exception e){}
+                        JOptionPane.showMessageDialog(null, "Guardado en "+archivoHoja.toString()+ " correctamente.");
+                    }
+                }else{ //Si ya existe el archivo
+
+                    archivoHoja = elegir.getSelectedFile().toString().endsWith(".txt") ? elegir.getSelectedFile() : new File(elegir.getSelectedFile().toString()+".txt");
+                    JOptionPane.showMessageDialog(null, "Guardado en "+archivoHoja.toString()+ " correctamente.");
+                    pedir = false;
+                }
+            }
+        }
+
+
+
+    }
 }
 
 class Formula {
