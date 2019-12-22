@@ -141,6 +141,10 @@ public class HojaDeCalculoSwing {
 
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                if(hoja.isEditado())
+                    noGuardado();
+
                 int[] nuevosValores = nuevaHoja();
 
                 if(nuevosValores[0] > 0 && nuevosValores[1] >0){
@@ -230,7 +234,7 @@ public class HojaDeCalculoSwing {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                System.out.println("Calcular");
+                hoja.calcular();
             }
 
         };
@@ -426,12 +430,8 @@ class Hoja {
                     value = hoja.getValueAt(fila, columna);
                 }
 
-                if (fila != -1 && columna != -1 && !String.valueOf(value).isEmpty()) {
-
-                    if (String.valueOf(value).charAt(0) == '=') {
-                        Formula formula = new Formula(String.valueOf(value), fila, columna, hoja);
-                        hoja.setValueAt(resolverFormula(formula), fila, columna);
-                    }
+                if (fila != -1 && columna != -1 && !String.valueOf(value).isEmpty()) {      
+                    hojaString[fila][columna] = String.valueOf(value);
                 }
 
             }
@@ -542,15 +542,72 @@ class Hoja {
      * RESOLVER FORMULA *
      ********************/
 
+
+     /**
+     * Hace los calculos correspondientes a la hoja de calculo cuando la matriz de
+     * referencias esta completa
+     */
+    public void calcular() {
+
+        ArrayList <Formula> formulas = new ArrayList<Formula>();
+        for (int i = 0; i < this.nFilas; i++) {
+            for (int j = 0; j < this.nCol; j++) {
+
+                // Si es formula la añado a una lista para hacerlo cuando todos los valores de-
+                // las demas casillas esten puestos
+                if(this.hojaString[i][j] != null){
+
+                    if (this.hojaString[i][j].charAt(0) == '=') {
+                        formulas.add(new Formula(this.hojaString[i][j], i, j));
+                    } 
+                }
+            }
+        }
+        //Ahora resuelvo las formulas, solo las resuelvo cuando todas las casillas que afectan a la formula tienen un valor asignado
+        
+        boolean resolviendo = true;
+        int cont = 0;
+
+        if(formulas.isEmpty())
+            resolviendo = false;
+        
+        while(resolviendo){
+            String valor = resolverFormula(formulas.get(cont));
+             
+            if(valor.equals("##ERRORFORM")){
+                cont++;
+                if( cont >=formulas.size() ){
+                    for(int i = 0; i<formulas.size();i++){
+                        hojaString[formulas.get(i).getFil()][formulas.get(i).getCol()] = "##DEPENDENCIA";
+                    }
+                    resolviendo = false;
+                }
+            }else{
+                this.hojaString[formulas.get(cont).getFil()][formulas.get(cont).getCol()] = valor;
+                formulas.remove(cont);
+                cont = 0;
+                if(formulas.isEmpty())
+                    resolviendo = false;
+            }
+        }
+
+        for(int i = 0; i<nFilas;i++){
+            for(int j = 0; j<nCol;j++){
+                if(hojaString[i][j] != null)
+                    this.hoja.setValueAt(hojaString[i][j], i, j);
+            }
+        }
+
+    }
+
     /**
      * Metodo que resuelve una formula
      * 
      * @param form Formula
      * @return valor numérico de la formula
      */
-    public static String resolverFormula(Formula form) {
+    public String resolverFormula(Formula form) {
         String formula = form.getFormula();
-        JTable hoja = form.getHoja();
         int valor = 0;
         ArrayList<int[]> casillas = new ArrayList<int[]>();
         // Suma
@@ -569,7 +626,7 @@ class Hoja {
                     return "##1ERRORFORM";
                 }
 
-                if (String.valueOf(hoja.getValueAt(casillas.get(i)[0], casillas.get(i)[1])).isEmpty()) {
+                if (String.valueOf(this.hoja.getValueAt(casillas.get(i)[0], casillas.get(i)[1])).isEmpty()) {
                     valor = valor + 0; // Puede cambiar, dependiendo especificaciones
                 } else {
                     valor = valor + Integer.parseInt(String.valueOf(hoja.getValueAt(fila, columna)));
@@ -654,7 +711,6 @@ class Formula {
     private String formula;
     private int filFormula;
     private int colFormula;
-    private JTable hoja;
 
     /**
      * Constructor de la clase formula
@@ -664,11 +720,10 @@ class Formula {
      * @param fil     Fila a la que pertenece la formula
      * @param col     Columna a la que pertenece la formula
      */
-    public Formula(String formula, int fil, int col, JTable hoja) {
+    public Formula(String formula, int fil, int col) {
         this.formula = formula;
         this.filFormula = fil;
         this.colFormula = col;
-        this.hoja = hoja;
     }
 
     /**
@@ -696,10 +751,6 @@ class Formula {
      */
     public int getCol() {
         return this.colFormula;
-    }
-
-    public JTable getHoja() {
-        return this.hoja;
     }
 
 }
