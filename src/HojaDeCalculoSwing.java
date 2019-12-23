@@ -27,6 +27,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.PrintWriter;
 
 public class HojaDeCalculoSwing {
 
@@ -122,7 +123,10 @@ public class HojaDeCalculoSwing {
                 if(!hoja.equals(null) && hoja.isEditado()){
                     boolean salir = noGuardado();
 
-                    if(salir == true){
+                    if(salir == false){
+                        System.exit(0);
+                    }else{
+                        hoja.guardar();
                         System.exit(0);
                     }
 
@@ -148,8 +152,13 @@ public class HojaDeCalculoSwing {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                if(hoja.isEditado())
-                    noGuardado();
+                if(hoja.isEditado()){
+                    boolean cambiar = noGuardado();
+
+                    if(cambiar == true){
+                        hoja.guardar();
+                    }
+                }
 
                 int[] nuevosValores = nuevaHoja();
 
@@ -371,12 +380,12 @@ public class HojaDeCalculoSwing {
         int opcion = JOptionPane.showConfirmDialog(null, "Los cambios no han sido guardados, ¿Desea guardarlos?");
 
         if(opcion == JOptionPane.YES_OPTION){
-            return false; //Iria el acceso al metodo de guardar
+            return true; //Iria el acceso al metodo de guardar
         }else if(opcion == JOptionPane.NO_OPTION){
-            return true;
+            return false; 
             
         }else if(opcion == JOptionPane.CANCEL_OPTION){
-            return false;
+            return true;
            
         }
         return false;
@@ -453,6 +462,7 @@ class Hoja {
         this.posterior = null;
         this.hojaFilas = null;
         this.editado = false;
+        this.archivoHoja = null;
 
     }
 
@@ -715,10 +725,12 @@ class Hoja {
      *   GUARDAR Y ABRIR  *
      *********************/
 
+    /**
+     * Metodo que permite guardar la hoja en un archivo
+     */
     public void guardar (){
 
-
-        if(archivoHoja == null){
+        if(archivoHoja == null || !archivoHoja.exists()){
             JFileChooser elegir = new JFileChooser();
             FileNameExtensionFilter filtro = new FileNameExtensionFilter("Hojas de calculo con extension TXT", "txt");
             elegir.setFileFilter(filtro);
@@ -732,7 +744,7 @@ class Hoja {
                 if(opcion == JFileChooser.CANCEL_OPTION){
                     pedir = false;
 
-                    //Si no existe el archivo
+                    //Si no existe el archivo (compruebo que acabe en txt o no, ya que luego se le pondra esa extension)
                 }else if(! (elegir.getSelectedFile().toString().endsWith(".txt") ? elegir.getSelectedFile().exists() : new File(elegir.getSelectedFile().toString()+".txt").exists())){
 
                     int opc2 = JOptionPane.showConfirmDialog(elegir, "No existe el archivo, ¿Desea crearlo?");
@@ -741,25 +753,56 @@ class Hoja {
                         pedir = false;
                         archivoHoja = elegir.getSelectedFile();
 
-                        if(!archivoHoja.toString().endsWith(".txt")){
+                        if(!archivoHoja.toString().endsWith(".txt")){ //Le pongo la extension txt
                             archivoHoja = new File(archivoHoja.toString() +".txt");
                         }
                         try{
                             archivoHoja.createNewFile();
                         }catch(Exception e){}
-                        JOptionPane.showMessageDialog(null, "Guardado en "+archivoHoja.toString()+ " correctamente.");
                     }
                 }else{ //Si ya existe el archivo
 
                     archivoHoja = elegir.getSelectedFile().toString().endsWith(".txt") ? elegir.getSelectedFile() : new File(elegir.getSelectedFile().toString()+".txt");
-                    JOptionPane.showMessageDialog(null, "Guardado en "+archivoHoja.toString()+ " correctamente.");
                     pedir = false;
                 }
             }
         }
 
+        try{
 
+            //Creo un escritor para escribir en la hoja
+            archivoHoja.setWritable(true);
+            PrintWriter escribir = new PrintWriter(archivoHoja, "UTF-8");
+            
+            for(int i = 0; i<this.nFilas; i++){
+                for(int j = 0; j<this.nCol; j++){
 
+                    if(j != this.nCol -1){
+
+                        if(this.hojaString[i][j] == null){
+                            escribir.print("  ");
+                        }else{
+                            escribir.print(this.hojaString[i][j]+" ");
+                        }
+                    }else{
+                        if(this.hojaString[i][j] == null){
+                            escribir.print(" ");
+                        }else{
+                            escribir.print(this.hojaString[i][j]);
+                        }
+                    }
+                }
+                if(i != this.nFilas -1)
+                    escribir.println();
+            }
+            
+            escribir.close();
+        }catch(Exception e){
+            JOptionPane.showMessageDialog(null, "Error al guardar el archivo");
+            return;
+        }
+
+        JOptionPane.showMessageDialog(null, "Guardado en "+archivoHoja.toString()+ " correctamente.");
     }
 }
 
