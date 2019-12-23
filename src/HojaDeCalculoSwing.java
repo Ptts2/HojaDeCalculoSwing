@@ -211,7 +211,77 @@ public class HojaDeCalculoSwing {
             @Override
             public void actionPerformed(ActionEvent e) {
 
+                if(hoja.isEditado()){
+                    boolean cambiar = noGuardado();
+
+                    if(cambiar == true){
+                        hoja.guardar();
+                    }
+                }
+
+                File archivoALeer = null;
+                JFileChooser elegir = new JFileChooser();
+                FileNameExtensionFilter filtro = new FileNameExtensionFilter("Hojas de calculo con extension TXT", "txt");
+                elegir.setFileFilter(filtro);
+                boolean pedir = true;
                 
+                while(pedir){
+                    int opcion = elegir.showOpenDialog(null);
+                    
+                    if(opcion == JFileChooser.CANCEL_OPTION){
+                        pedir = false;
+    
+                    //Compruebo si existe o si termina con txt
+                    }else if( !(elegir.getSelectedFile().toString().endsWith(".txt")) || !(elegir.getSelectedFile().exists()) ){
+                        JOptionPane.showMessageDialog(null, "El archivo indicado debe ser de extension .txt y existir");
+                       
+                    }else{ //Si existe el archivo
+    
+                        archivoALeer = elegir.getSelectedFile();
+                        pedir = false;
+                    }
+                }
+
+                ArrayList<String[]> lista = new ArrayList<String[]>();
+
+                try{
+                Scanner lector = new Scanner(archivoALeer);
+
+                    while(lector.hasNextLine()){
+                        lista.add(lector.nextLine().split("SEPARACION"));
+                    }
+                    lector.close();
+                }catch(Exception ex){
+                    JOptionPane.showMessageDialog(null, "Error al abrir el archivo");
+                };
+
+                panel.remove(panelHoja);
+                panel.remove(hoja.getNFilaTable());
+                panelHoja.remove(hoja.getTable());
+                panel.remove(filas);
+
+                hoja.nuevaHoja(lista.size(), lista.get(0).length);
+
+                panelHoja.setViewportView(hoja.getTable());
+                filas.setViewportView(hoja.getNFilaTable());
+                panel.add(filas, BorderLayout.WEST);
+                panel.add(panelHoja, BorderLayout.CENTER);
+                SwingUtilities.updateComponentTreeUI(ventana);
+                hoja.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
+
+                @Override
+                public void mouseClicked(java.awt.event.MouseEvent e) {
+                        panelTextoFilaCol.setText("Fila: " + (hoja.getTable().rowAtPoint(e.getPoint()) + 1) + " Columna: "
+                                + (hoja.getTable().columnAtPoint(e.getPoint()) + 1));
+                    }
+                });
+                
+                
+                for(int i = 0; i<hoja.getCol(); i++){
+                    hoja.setFila(lista.get(i), i);
+                }
+
+                SwingUtilities.updateComponentTreeUI(ventana);
             }
 
         };
@@ -328,13 +398,12 @@ public class HojaDeCalculoSwing {
 
     /**
      * Metodo que pide los datos para una nueva hoja
-     * 
      * @return tamaño de filas y columnas para la nueva hoja
      */
     public static int[] nuevaHoja() {
 
         int filasYCol[] = new int[2];
-
+      
         JTextField pedirFilas = new JTextField(10);
         JTextField pedirColumnas = new JTextField(10);
         boolean pidiendo = true;
@@ -370,7 +439,7 @@ public class HojaDeCalculoSwing {
                 pidiendo = false;
             }
         }
-
+    
         return filasYCol;
 
     }
@@ -480,6 +549,22 @@ class Hoja {
     }
 
     /**
+     * Metodo que devuelve el numero de columnas
+     * @return el numero de columnas
+     */
+    public int getCol(){
+        return this.nCol;
+    }
+
+    /**
+     * Metodo que devuelve el numero de filas
+     * @return el numero de filas
+     */
+    public int getFil(){
+        return this.nFilas;
+    }
+
+    /**
      * Metodo que dice si la hoja ha sido editada
      * @return si ha sido editada true, si no false
      */
@@ -554,6 +639,15 @@ class Hoja {
      */
     public void setEditado(boolean editado){
         this.editado = editado;
+    }
+
+    public void setFila(String[] fila, int nFila){
+
+        for(int i = 0; i<nCol; i++){
+            hojaString[nFila][i] = fila[i];
+            hoja.setValueAt(fila[i], nFila, i);
+        }
+
     }
 
     /********************
@@ -780,9 +874,9 @@ class Hoja {
                     if(j != this.nCol -1){
 
                         if(this.hojaString[i][j] == null){
-                            escribir.print("  ");
+                            escribir.print(" SEPARACION"); //Supongo que no va a haber texto, por eso uso este separador
                         }else{
-                            escribir.print(this.hojaString[i][j]+" ");
+                            escribir.print(this.hojaString[i][j]+"SEPARACION");
                         }
                     }else{
                         if(this.hojaString[i][j] == null){
