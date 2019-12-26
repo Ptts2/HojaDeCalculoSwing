@@ -31,8 +31,6 @@ import java.io.PrintWriter;
 
 public class HojaDeCalculoSwing {
 
-    private static JTable tablaImportada;
-
     public static void main(String[] args) {
         creadorDeVentana();
 
@@ -59,23 +57,12 @@ public class HojaDeCalculoSwing {
         JButton botonCalcular = new JButton("Calcular");
         JScrollPane panelHoja; // Panel scrollable al que añado la hoja
         JScrollPane filas; //Panel donde iran los numeros de fila
-        JTable tabla; //tabla a añadir
         valores = new int [2];
         hoja = new Hoja(); // Hoja de calculo
 
-        tabla = inicio(valores);
-
-        if(tabla == null){
-            hoja.nuevaHoja(valores[0], valores[1]);
-        }else{
-            //hoja.setTable(tabla); falta implementar
-        }
-        panelHoja = new JScrollPane(hoja.getTable());
-        filas = new JScrollPane(hoja.getNFilaTable());
-
-        /*******************
-         * BARRAS Y MENUS *
-         *******************/
+        /********************
+         *  BARRAS Y MENUS  *
+         ********************/
 
         JMenuBar barra = new JMenuBar(); // La Barra
         JMenu archivo = new JMenu("Archivo"); // Menu Archivo
@@ -94,26 +81,23 @@ public class HojaDeCalculoSwing {
         JMenuItem rehacer = new JMenuItem("Rehacer");
         editar.add(deshacer);
         editar.add(rehacer);
+        
 
-        /************************
-         * PROPIEDADES PANELES *
-         ************************/
+        /********************
+         *  INICIO DE HOJA  *
+         ********************/
 
-        panelTextoFilaCol.setOpaque(true);
-        panelTextoFilaCol.setBackground(new Color(238, 238, 238));
-        panelTextoFilaCol.setEditable(false);
-        panelTextoFilaCol.setText("Fila: N/A Columna: N/A");
-        filas.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
-        filas.getVerticalScrollBar().setModel(panelHoja.getVerticalScrollBar().getModel());
-        filas.setPreferredSize(new Dimension(100,16));
-        panelTexto.setOpaque(true);
-        panelTexto.setBackground(new Color(238, 238, 238));
-        panelTexto.setEditable(false);
+        valores = nuevaHoja();
+
+        if(valores[0] > 0 && valores[1] > 0){
+            hoja.nuevaHoja(valores[0], valores[1]);
+        }
+        panelHoja = new JScrollPane(hoja.getTable());
+        filas = new JScrollPane(hoja.getNFilaTable());
 
         /************************
          * LISTENERS Y ACCIONES *
          ************************/
-
 
         ventana.addWindowListener(new WindowAdapter(){
             
@@ -256,9 +240,11 @@ public class HojaDeCalculoSwing {
                 };
 
                 panel.remove(panelHoja);
+
                 panel.remove(hoja.getNFilaTable());
                 panelHoja.remove(hoja.getTable());
                 panel.remove(filas);
+                
 
                 hoja.nuevaHoja(lista.size(), lista.get(0).length);
 
@@ -294,7 +280,7 @@ public class HojaDeCalculoSwing {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                System.out.println("Deshacer");
+                hoja.deshacer();
             }
 
         };
@@ -307,7 +293,7 @@ public class HojaDeCalculoSwing {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                System.out.println("Rehacer");
+                hoja.rehacer();
             }
 
         };
@@ -325,6 +311,21 @@ public class HojaDeCalculoSwing {
 
         };
         botonCalcular.setAction(calcula);
+
+        /************************
+         * PROPIEDADES PANELES *
+         ************************/
+
+        panelTextoFilaCol.setOpaque(true);
+        panelTextoFilaCol.setBackground(new Color(238, 238, 238));
+        panelTextoFilaCol.setEditable(false);
+        panelTextoFilaCol.setText("Fila: N/A Columna: N/A");
+        filas.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        filas.getVerticalScrollBar().setModel(panelHoja.getVerticalScrollBar().getModel());
+        filas.setPreferredSize(new Dimension(100,16));
+        panelTexto.setOpaque(true);
+        panelTexto.setBackground(new Color(238, 238, 238));
+        panelTexto.setEditable(false);
 
         /******************
          * AÑADIR PANELES *
@@ -348,52 +349,6 @@ public class HojaDeCalculoSwing {
         ventana.pack(); // Mejor tamaño posible
         ventana.setVisible(true);
 
-    }
-
-    public static JTable inicio(int[] valores){
-
-        tablaImportada = null;
-        JButton OpcionNuevaHoja = new JButton("Crear nueva hoja");
-        JButton OpcionAbrirHoja = new JButton("Abrir hoja existente");
-
-        JPanel panelAviso = new JPanel();
-        panelAviso.add(new JLabel("Bienvenido, ¿Qué desea hacer?"));
-        panelAviso.add(OpcionNuevaHoja);
-        panelAviso.add(OpcionAbrirHoja);
-
-        
-        Action nuevaHoja = new AbstractAction("Crear nueva hoja") {
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                int guardaValores[] = nuevaHoja();
-                valores[0] = guardaValores[0];
-                valores[1] = guardaValores[1];
-
-                if(valores[0] > 0 && valores[1] > 0)
-                    JOptionPane.getRootFrame().dispose();  
-            }
-
-        };
-        
-
-        Action abrirHoja = new AbstractAction("Abrir hoja existente") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                tablaImportada = abrirHoja();
-                JOptionPane.getRootFrame().dispose();  
-            }
-        };
-   
-    
-        OpcionNuevaHoja.setAction(nuevaHoja);
-        OpcionAbrirHoja.setAction(abrirHoja);
-        
-
-        JOptionPane.showOptionDialog(null, "Bienvenido, ¿Qué desea hacer?", "Hoja de calculo", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[]{OpcionNuevaHoja, OpcionAbrirHoja}, OpcionNuevaHoja);
-        
-        return tablaImportada;
     }
 
     /**
@@ -461,13 +416,6 @@ public class HojaDeCalculoSwing {
 
     }
 
-    public static JTable abrirHoja(){
-
-        JOptionPane.showMessageDialog(null, "Aun no implementado");
-
-        return null;
-    }
-
 }
 
 class Hoja {
@@ -477,8 +425,8 @@ class Hoja {
     private String[][] hojaString;
     private int nFilas;
     private int nCol;
-    private Hoja anterior;
-    private Hoja posterior;
+    private Cambio anterior;
+    private Cambio posterior;
     private boolean editado;
     private File archivoHoja;
 
@@ -487,6 +435,7 @@ class Hoja {
      */
     public Hoja() {
         hojaFilas = null;
+
     }
 
     /**
@@ -514,12 +463,20 @@ class Hoja {
                     fila = hoja.getSelectedRow();
                     columna = hoja.getSelectedColumn();
                     value = hoja.getValueAt(fila, columna);
+
                 }
 
-                if (fila != -1 && columna != -1 && !String.valueOf(value).isEmpty()) {      
+                if (fila != -1 && columna != -1 /*&& !String.valueOf(value).isEmpty()*/) {      
+
+                    if(anterior == null){
+                        anterior = new Cambio(hojaString, null);
+                    }else{
+                        anterior = new Cambio(hojaString, anterior);
+                    }
                     hojaString[fila][columna] = String.valueOf(value);
-                }
 
+                }
+                
             }
 
         });
@@ -532,6 +489,9 @@ class Hoja {
         this.hojaFilas = null;
         this.editado = false;
         this.archivoHoja = null;
+
+        this.anterior = null;
+        this.posterior = null;
 
     }
 
@@ -562,6 +522,14 @@ class Hoja {
      */
     public int getFil(){
         return this.nFilas;
+    }
+
+    /**
+     * Devuelve la hoja como una tabla de strings
+     * @return hoja como una tabla de strings
+     */
+    public String[][] getHojaString(){
+        return this.hojaString;
     }
 
     /**
@@ -613,24 +581,6 @@ class Hoja {
             this.hojaFilas = filas;
             return this.hojaFilas;
         }
-    }
-
-    /**
-     * Metodo que cambia la tabla anterior
-     * 
-     * @param anterior nueva tabla anterior
-     */
-    public void setAnterior(Hoja anterior) {
-        this.anterior = anterior;
-    }
-
-    /**
-     * Metodo que cambia la tabla posterior
-     * 
-     * @param posterior nueva tabla posterior
-     */
-    public void setPosterior(Hoja posterior) {
-        this.posterior = posterior;
     }
 
     /**
@@ -898,6 +848,76 @@ class Hoja {
 
         JOptionPane.showMessageDialog(null, "Guardado en "+archivoHoja.toString()+ " correctamente.");
     }
+
+
+    /************************
+     *  DESHACER Y REHACER  *
+     ************************/
+
+    public void deshacer(){
+
+        if(this.anterior!=null){
+
+            String[][] anterior = this.anterior.getTabla();
+            this.posterior = this.anterior;
+
+            if(this.anterior.getSiguiente() == null){
+                this.anterior = null;
+            }else{
+                this.anterior = this.anterior.getSiguiente();
+            }
+
+            for(int i = 0; i<nFilas; i++){
+                for(int j = 0; j<nCol; j++){
+
+                    hoja.setValueAt(anterior[i][j], i, j);
+                    this.hojaString[i][j] = anterior[i][j];
+                }
+            }
+        }
+    }
+
+    public void rehacer(){
+
+    }
+}
+
+class Cambio{
+
+
+    private String[][] tabla;
+    private Cambio siguiente;
+
+    public Cambio(String[][] tabla, Cambio cambio){
+
+        this.tabla = new String[tabla.length][];
+
+        for(int i = 0; i< tabla.length; i++){
+            this.tabla[i] = tabla[i].clone();
+        }
+
+        this.siguiente = cambio;
+    }
+
+    public void setCambio(String[][] tabla, Cambio cambio){
+
+        for(int i = 0; i< tabla.length; i++){
+            this.tabla[i] = tabla[i].clone();
+        }
+
+        this.tabla = tabla;
+        this.siguiente = cambio;
+    }
+
+    public String[][] getTabla(){
+
+        return this.tabla;
+    }
+
+    public Cambio getSiguiente(){
+        return this.siguiente;
+    }
+
 }
 
 class Formula {
