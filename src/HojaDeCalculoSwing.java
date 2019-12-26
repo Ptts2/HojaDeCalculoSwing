@@ -859,7 +859,13 @@ class Hoja {
         if(this.anterior!=null){
 
             String[][] anterior = this.anterior.getTabla();
-            this.posterior = this.anterior;
+
+            if(this.posterior == null){
+                this.posterior = new Cambio(this.hojaString, null);
+            }else{
+                this.posterior = new Cambio(this.hojaString, this.posterior);
+            }
+            
 
             if(this.anterior.getSiguiente() == null){
                 this.anterior = null;
@@ -879,6 +885,25 @@ class Hoja {
 
     public void rehacer(){
 
+        if(this.posterior != null){
+            String[][] posterior = this.posterior.getTabla();
+
+            this.anterior = new Cambio(this.hojaString, this.anterior);
+
+            if(this.posterior.getSiguiente() == null){
+                this.posterior = null;
+            }else{
+                this.posterior = this.posterior.getSiguiente();
+            }
+
+            for(int i = 0; i<nFilas; i++){
+                for(int j = 0; j<nCol; j++){
+
+                    hoja.setValueAt(posterior[i][j], i, j);
+                    this.hojaString[i][j] = posterior[i][j];
+                }
+            }
+        }
     }
 }
 
