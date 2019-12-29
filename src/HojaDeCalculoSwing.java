@@ -392,6 +392,7 @@ public class HojaDeCalculoSwing {
 
             if(accion == JOptionPane.CANCEL_OPTION){
                 pidiendo = false;
+                System.exit(0);
             }
         }
     
@@ -610,6 +611,13 @@ class Hoja {
      * referencias esta completa
      */
     public void calcular() {
+
+
+        if(anterior == null){
+            anterior = new Cambio(hojaString, null);
+        }else{
+            anterior = new Cambio(hojaString, anterior);
+        }
 
         ArrayList <Formula> formulas = new ArrayList<Formula>();
         for (int i = 0; i < this.nFilas; i++) {
