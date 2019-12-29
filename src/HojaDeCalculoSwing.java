@@ -640,7 +640,7 @@ class Hoja {
                 cont++;
                 if( cont >=formulas.size() ){
                     for(int i = 0; i<formulas.size();i++){
-                        hojaString[formulas.get(i).getFil()][formulas.get(i).getCol()] = "##DEPENDENCIA";
+                        hojaString[formulas.get(i).getFil()][formulas.get(i).getCol()] = "##ERRORFORMULA";
                     }
                     resolviendo = false;
                 }
